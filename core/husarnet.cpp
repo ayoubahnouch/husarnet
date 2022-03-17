@@ -402,7 +402,7 @@ struct NgSocketImpl : public NgSocket {
     peer->reestablishing = true;
     peer->helloCookie = randBytes(16);
 
-    LOGV("reestablish connection to [%s]",
+    LOG("reestablish connection to [%s]",
          IpAddress::fromBinary(peer->id).str().c_str());
 
     std::vector<InetAddress> addresses = peer->targetAddresses;
@@ -438,16 +438,21 @@ struct NgSocketImpl : public NgSocket {
         // send the heartbeat twice to the active address
         sendToPeer(address, response);
     }
-    LOGV("addresses: %s", msg.c_str());
+    LOG("addresses: %s", msg.c_str());
   }
 
   void peerMessageReceived(InetAddress source, const PeerToPeerMessage& msg) {
     if (msg.kind == PeerToPeerMessage::DATA) {
+      LOG("[DATA RECEIVED]:Source:%s:%u",+source.ip.str().c_str(),source.port);
       peerDataPacketReceived(source, msg.data);
     } else if (msg.kind == PeerToPeerMessage::HELLO) {
+      LOG("[HELLO RECEIVED]:Source:%s:%u",source.ip.str().c_str(),source.port);
       helloReceived(source, msg);
     } else if (msg.kind == PeerToPeerMessage::HELLO_REPLY) {
+      LOG("[HELLO_REPLY RECEIVED]:Source:%s:%u",source.ip.str().c_str(),source.port);
       helloReplyReceived(source, msg);
+    }else{
+      LOG("[INVALID PEER MESSAGE RECEIVED]:Source:%s:%u",source.ip.str().c_str(),source.port);
     }
   }
 
@@ -458,11 +463,11 @@ struct NgSocketImpl : public NgSocket {
     Peer* peer = getOrCreatePeer(msg.myId);
     if (peer == nullptr)
       return;
-    LOGV("HELLO from %s (id: %s, active: %s)", source.str().c_str(),
+    LOG("HELLO from %s (id: %s, active: %s)", source.str().c_str(),
          IDSTR(msg.myId), peer->active() ? "YES" : "NO");
 
     if (!options->isAddressAllowed(source)) {
-      LOGV("- rejected due to blacklist");
+      LOG("- rejected due to blacklist");
       return;
     }
     addSourceAddress(peer, source);
@@ -484,7 +489,7 @@ struct NgSocketImpl : public NgSocket {
     if (msg.yourId != deviceId)
       return;
 
-    LOGV("HELLO-REPLY from %s (%s)", source.str().c_str(),
+    LOG("HELLO-REPLY from %s (%s)", source.str().c_str(),
          encodeHex(msg.myId).c_str());
     Peer* peer = getPeerById(msg.myId);
     if (peer == nullptr)
@@ -495,12 +500,12 @@ struct NgSocketImpl : public NgSocket {
       return;
 
     if (!options->isAddressAllowed(source)) {
-      LOGV("(address blacklisted)");
+      LOG("(address blacklisted)");
       return;
     }
 
     int latency = currentTime() - peer->lastReestablish;
-    LOGV(" - using this address as target (reply received after %d ms)",
+    LOG(" - using this address as target (reply received after %d ms)",
          latency);
     peer->targetAddress = source;
     peer->connected = true;
@@ -541,7 +546,7 @@ struct NgSocketImpl : public NgSocket {
 
     if (msg.kind == BaseToPeerMessage::HELLO) {
       LOG("TCP connection to base server established");
-      LOGV("received hello cookie %s", encodeHex(msg.cookie).c_str());
+      LOG("received hello cookie %s", encodeHex(msg.cookie).c_str());
       cookie = msg.cookie;
       resendInfoRequests();
       sendLocalAddressesToBase();
@@ -558,11 +563,11 @@ struct NgSocketImpl : public NgSocket {
       if (!options->disableUdp) {
         allBaseUdpAddresses = msg.udpAddress;
         baseUdpAddress = msg.udpAddress[0];
-        LOGV("received base UDP address: %s", baseUdpAddress.str().c_str());
+        LOG("received base UDP address: %s", baseUdpAddress.str().c_str());
 
         if (msg.natTransientRange.first != 0 &&
             msg.natTransientRange.second >= msg.natTransientRange.first) {
-          LOGV("received base transient range: %d %d",
+          LOG("received base transient range: %d %d",
                msg.natTransientRange.first, msg.natTransientRange.second);
           baseTransientRange = msg.natTransientRange;
           if (baseTransientPort == 0) {
@@ -657,7 +662,7 @@ struct NgSocketImpl : public NgSocket {
 
     Peer* peer = getPeerById(devId);
 
-    LOGV("multicast received from %s, id %s, port %d, interesting: %s",
+    LOG("multicast received from %s, id %s, port %d, interesting: %s",
          address.str().c_str(), IDSTR(devId), port,
          peer == NULL ? "NO" : "YES");
 
@@ -711,7 +716,7 @@ struct NgSocketImpl : public NgSocket {
   }
 
   void sendInfoRequestToBase(DeviceId id) {
-    LOGV("info request %s", IDSTR(id));
+    LOG("info request %s", IDSTR(id));
     PeerToBaseMessage msg;
     msg.kind = PeerToBaseMessage::REQUEST_INFO;
     msg.deviceId = id;
@@ -1065,8 +1070,36 @@ void NgSocketImpl::connectToBase() {
 }
 
 void NgSocketImpl::sendToBaseUdp(const PeerToBaseMessage& msg) {
-  if (!baseConnection || cookie.size() == 0)
+  if (!baseConnection || cookie.size() == 0){
+    LOG("[ERROR]:sendToBaseUdp called but no base connection or no hello cookie");
     return;
+  }
+  switch(msg.kind){
+    case PeerToBaseMessage::REQUEST_INFO:
+    LOG("[SEND UDP BASE]:REQUEST_INFO");
+    break;
+    case PeerToBaseMessage::DATA:
+    LOG("[SEND UDP BASE]:DATA");
+    break;
+    case PeerToBaseMessage::INFO:
+    LOG("[SEND UDP BASE]:INFO");
+    break;
+    case PeerToBaseMessage::NAT_INIT:
+    LOG("[SEND UDP BASE]:NAT_INIT");
+    break;
+    case PeerToBaseMessage::USER_AGENT:
+    LOG("[SEND UDP BASE]:USER_AGENT");
+    break;
+    case PeerToBaseMessage::NAT_OK_CONFIRM:
+    LOG("[SEND UDP BASE]:NAT_OK_INIT");
+    break;
+    case PeerToBaseMessage::NAT_INIT_TRANSIENT:
+    LOG("[SEND UDP BASE]:NAT_INIT_TRANSIENT");
+    break;
+    case PeerToBaseMessage::INVALID:
+    LOG("[SEND UDP BASE]:INVALID");
+    break;
+  }
   std::string serialized = serializePeerToBaseMessage(msg);
   if (msg.kind == PeerToBaseMessage::NAT_INIT ||
       msg.kind == PeerToBaseMessage::NAT_OK_CONFIRM ||
@@ -1086,13 +1119,56 @@ void NgSocketImpl::sendToBaseUdp(const PeerToBaseMessage& msg) {
 }
 
 void NgSocketImpl::sendToBaseTcp(const PeerToBaseMessage& msg) {
-  if (!baseConnection || cookie.size() == 0)
+  if (!baseConnection || cookie.size() == 0){
+    LOG("[ERROR]:sendToBaseTcp called but no base connection or no hello cookie");
     return;
+  }
+  switch(msg.kind){
+    case PeerToBaseMessage::REQUEST_INFO:
+    LOG("[SEND TCP BASE]:REQUEST_INFO");
+    break;
+    case PeerToBaseMessage::DATA:
+    LOG("[SEND TCP BASE]:DATA");
+    break;
+    case PeerToBaseMessage::INFO:
+    LOG("[SEND TCP BASE]:INFO");
+    break;
+    case PeerToBaseMessage::NAT_INIT:
+    LOG("[SEND TCP BASE]:NAT_INIT");
+    break;
+    case PeerToBaseMessage::USER_AGENT:
+    LOG("[SEND TCP BASE]:USER_AGENT");
+    break;
+    case PeerToBaseMessage::NAT_OK_CONFIRM:
+    LOG("[SEND TCP BASE]:NAT_OK_INIT");
+    break;
+    case PeerToBaseMessage::NAT_INIT_TRANSIENT:
+    LOG("[SEND TCP BASE]:NAT_INIT_TRANSIENT");
+    break;
+    case PeerToBaseMessage::INVALID:
+    LOG("[SEND TCP BASE]:INVALID");
+    break;
+  }
   std::string serialized = serializePeerToBaseMessage(msg);
   write(baseConnection, serialized, msg.kind != PeerToBaseMessage::DATA);
 }
 
 void NgSocketImpl::sendToPeer(InetAddress dest, const PeerToPeerMessage& msg) {
+  switch(msg.kind){
+    case PeerToPeerMessage::HELLO:
+    LOG("[SEND TO PEER]:Destination:%s:HELLO",dest.ip.str().c_str());
+    break;
+    case PeerToPeerMessage::HELLO_REPLY:
+    LOG("[SEND TO PEER]:Destination:%s:HELLO_REPLY",dest.ip.str().c_str());
+    break;
+    case PeerToPeerMessage::INVALID:
+    LOG("[SEND TO PEER]:Destination:%s:INVALID",dest.ip.str().c_str());
+    break;
+    case PeerToPeerMessage::DATA:
+    LOG("[SEND TO PEER]:Destination:%s:DATA",dest.ip.str().c_str());
+    break;
+  }
+
   std::string serialized = serializePeerToPeerMessage(msg);
   udpSend(dest, std::move(serialized));
 }

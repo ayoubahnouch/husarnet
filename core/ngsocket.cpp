@@ -220,7 +220,6 @@ void NgSocket::sendPing(uint16_t sequence) {
         .kind = PeerToBaseMessageKind::PING,
         .sequence = sequence,
     };
-    LOG("TRRRR:%d",msg.sequence);
     if(isBaseUdp()) {
       sendToBaseUdp(msg);
     } else {
@@ -699,25 +698,11 @@ std::vector<Peer*> NgSocket::iteratePeers()
   return peersVec;
 }
 
-std::string string_to_hex(const std::string& in) {
-    std::stringstream ss;
-
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; in.length() > i; ++i) {
-        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
-    }
-
-    return ss.str(); 
-}
-
-
 BaseToPeerMessage NgSocket::parseBaseToPeerMessage(string_view data)
 {
   BaseToPeerMessage msg{
       .kind = BaseToPeerMessageKind::INVALID,
   };
-  //auto tmp = std::string(substr<0, data.size()>(data));
-  //LOG("baseTOPeerMessage:%s",string_to_hex(tmp).c_str());
   if(data.size() == 0)
     return msg;
 
@@ -761,7 +746,6 @@ BaseToPeerMessage NgSocket::parseBaseToPeerMessage(string_view data)
       return msg;
   } else if(data[0] == (char)BaseToPeerMessageKind::PING){
     msg.sequence = htons(unpack<uint16_t>(data.substr(1,2)));
-    LOG("HEREE:%d",msg.sequence);
   } else {
     return msg;
   }

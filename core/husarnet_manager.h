@@ -21,6 +21,7 @@
 #include "husarnet/peer_container.h"
 #include "husarnet/security_layer.h"
 #include "husarnet/websetup.h"
+#include "husarnet/pingmanager.h"
 
 #include "ports/port.h"
 
@@ -32,6 +33,7 @@ class NgSocket;
 class PeerContainer;
 class PeerFlags;
 class WebsetupConnection;
+class PingManager;
 
 using HostsFileUpdateFunc =
     std::function<void(std::vector<std::pair<IpAddress, std::string>>)>;
@@ -41,6 +43,7 @@ class HusarnetManager {
   Identity identity;
   PeerFlags* selfFlags;
   NgSocket* ngsocket;
+  PingManager* pingManager;
   SecurityLayer* securityLayer;
   ConfigStorage* configStorage;
   PeerContainer* peerContainer;
@@ -126,7 +129,9 @@ class HusarnetManager {
   IpAddress getWebsetupAddress();
   std::vector<IpAddress> getBaseServerAddresses();
 
+
   NgSocket* getNGSocket();
+  PingManager* getPingManager();
   SecurityLayer* getSecurityLayer();
   std::string getInterfaceName();
   void setInterfaceName(std::string name);

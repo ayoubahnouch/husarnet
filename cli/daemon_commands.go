@@ -5,7 +5,8 @@ package main
 
 import (
 	"net/url"
-
+	"fmt"
+	"strconv"
 	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 )
@@ -97,6 +98,37 @@ var daemonStatusCommand = &cli.Command{
 	ArgsUsage: " ", // No arguments needed
 	Action: func(ctx *cli.Context) error {
 		printStatus(ctx)
+		return nil
+
+	},
+}
+
+var daemonPingCommand = &cli.Command{
+	Name:  "ping",
+	Usage: "Ping base server",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:        "count",
+			Aliases:     []string{"c"},
+			Usage:       "count fo pings to send",
+			Destination: &pingCount,
+		},
+	},
+	ArgsUsage: "[count]", // No arguments needed
+	Action: func(ctx *cli.Context) error {
+		count:=10
+		if pingCount {
+			tmp, err := strconv.Atoi(ctx.Args().Get(0))
+			if err != nil {
+				printWarning(fmt.Sprintf("Wrong type of argument was given as count: %s",err.Error()))
+				return nil
+			}
+			count = tmp
+		}
+		for i:=0; i<count; i++ {
+			result:= callDaemonGet[PingResult]("/api/ping").Result.Message
+			printInfo(result)
+		}
 		return nil
 
 	},
@@ -307,6 +339,7 @@ var daemonCommand = &cli.Command{
 	Subcommands: []*cli.Command{
 		daemonStatusCommand,
 		joinCommand,
+		daemonPingCommand,
 		daemonSetupServerCommand,
 		daemonStartCommand,
 		daemonRestartCommand,

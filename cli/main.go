@@ -20,6 +20,7 @@ var husarnetDashboardFQDN string
 var husarnetDaemonAPIPort = 0
 var verboseLogs bool
 var wait bool
+var pingCount bool
 
 func main() {
 	app := &cli.App{
@@ -67,6 +68,7 @@ func main() {
 			daemonStatusCommand,
 			joinCommand,
 			daemonSetupServerCommand,
+			daemonPingCommand,
 
 			dashboardLoginCommand,
 

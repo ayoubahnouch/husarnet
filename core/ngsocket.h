@@ -146,4 +146,5 @@ class NgSocket : public LowerLayer {
 
   BaseConnectionType getCurrentBaseConnectionType();
   InetAddress getCurrentBaseAddress();
+  void sendPing(uint16_t seqence);
 };

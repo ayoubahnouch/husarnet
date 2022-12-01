@@ -122,6 +122,22 @@ void ApiServer::runThread()
     res.set_content("Hello World!", "text/plain");
   });
 
+    svr.Get(
+      "/api/ping", [&](const httplib::Request& req, httplib::Response& res) {
+      std::pair<bool,std::chrono::milliseconds> result = manager->getPingManager()->sendPing();
+      if(result.first){
+        returnSuccess(req, res,json::object({
+         {"version", manager->getVersion()},
+         {"message", std::to_string(result.second.count())}
+      }));
+      } else{
+      returnSuccess(req, res,json::object({
+         {"version", manager->getVersion()},
+         {"message", "result"}
+      }));
+      }
+    });
+
   svr.Get(
       "/api/status", [&](const httplib::Request& req, httplib::Response& res) {
         auto hostTable = manager->getConfigStorage().getHostTable();

@@ -215,6 +215,19 @@ void NgSocket::sendDataToPeer(Peer* peer, string_view data)
   peer->lastPacket = Port::getCurrentTime();
 }
 
+void NgSocket::sendPing(uint16_t sequence) {
+      PeerToBaseMessage msg = {
+        .kind = PeerToBaseMessageKind::PING,
+        .sequence = sequence,
+    };
+    LOG("TRRRR:%d",msg.sequence);
+    if(isBaseUdp()) {
+      sendToBaseUdp(msg);
+    } else {
+      sendToBaseTcp(msg);
+    }
+}
+
 void NgSocket::attemptReestablish(Peer* peer)
 {
   // TODO long term - if (peer->reestablishing) something;
@@ -375,6 +388,11 @@ void NgSocket::baseMessageReceivedUdp(const BaseToPeerMessage& msg)
       };
       sendToBaseUdp(resp);
     } break;
+    case +BaseToPeerMessageKind::PING:
+      if(manager->getPingManager()->getCurrentSequence()==msg.sequence){
+        manager->getPingManager()->notify();
+      }
+      break;
     default:
       LOG("received invalid UDP message from base");
   }
@@ -426,6 +444,11 @@ void NgSocket::baseMessageReceivedTcp(const BaseToPeerMessage& msg)
       baseAddress = msg.newBaseAddress;
       LOG("redirected to new base server: %s", baseAddress.str().c_str());
       connectToBase();
+      break;
+      case +BaseToPeerMessageKind::PING:
+      if(manager->getPingManager()->getCurrentSequence()==msg.sequence){
+        manager->getPingManager()->notify();
+      }
       break;
     default:
       LOG("received invalid message from base (kind: %s)",
@@ -676,12 +699,25 @@ std::vector<Peer*> NgSocket::iteratePeers()
   return peersVec;
 }
 
+std::string string_to_hex(const std::string& in) {
+    std::stringstream ss;
+
+    ss << std::hex << std::setfill('0');
+    for (size_t i = 0; in.length() > i; ++i) {
+        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
+    }
+
+    return ss.str(); 
+}
+
+
 BaseToPeerMessage NgSocket::parseBaseToPeerMessage(string_view data)
 {
   BaseToPeerMessage msg{
       .kind = BaseToPeerMessageKind::INVALID,
   };
-
+  //auto tmp = std::string(substr<0, data.size()>(data));
+  //LOG("baseTOPeerMessage:%s",string_to_hex(tmp).c_str());
   if(data.size() == 0)
     return msg;
 
@@ -723,6 +759,9 @@ BaseToPeerMessage NgSocket::parseBaseToPeerMessage(string_view data)
 
     if(msg.udpAddress.size() < 1)
       return msg;
+  } else if(data[0] == (char)BaseToPeerMessageKind::PING){
+    msg.sequence = htons(unpack<uint16_t>(data.substr(1,2)));
+    LOG("HEREE:%d",msg.sequence);
   } else {
     return msg;
   }
@@ -830,6 +869,9 @@ std::string NgSocket::serializePeerToBaseMessage(const PeerToBaseMessage& msg)
     case +PeerToBaseMessageKind::NAT_OK_CONFIRM:
       data += pack((uint64_t)natInitCounter);
       break;
+    case +PeerToBaseMessageKind::PING:
+      data +=pack((uint16_t)msg.sequence);
+      break;
     default:
       LOG("tried to serialize unexpected peer to base message type: %s",
           msg.kind._to_string());
@@ -933,6 +975,7 @@ void NgSocket::sendToBaseUdp(const PeerToBaseMessage& msg)
       }
       break;
     default:
+
       udpSend(baseUdpAddress, serialized);
   }
 }

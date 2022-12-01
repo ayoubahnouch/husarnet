@@ -282,6 +282,11 @@ NgSocket* HusarnetManager::getNGSocket()
   return ngsocket;
 }
 
+PingManager* HusarnetManager::getPingManager()
+{
+  return pingManager;
+}
+
 SecurityLayer* HusarnetManager::getSecurityLayer()
 {
   return securityLayer;
@@ -426,6 +431,7 @@ void HusarnetManager::stage1()
   Privileged::start();
 
   logManager = new LogManager(100);
+  pingManager = new PingManager(this);
   globalLogManager = logManager;
 
   configStorage = new ConfigStorage(

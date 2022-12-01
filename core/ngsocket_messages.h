@@ -20,7 +20,8 @@ BETTER_ENUM(
     NAT_OK,
     STATE,
     REDIRECT,
-    INVALID)
+    INVALID,
+    PING=12)
 
 struct BaseToPeerMessage {
   BaseToPeerMessageKind kind;
@@ -42,6 +43,9 @@ struct BaseToPeerMessage {
 
   // Redirect
   InetAddress newBaseAddress;
+
+  // Ping
+  uint16_t sequence;
 };
 
 BETTER_ENUM(
@@ -54,7 +58,8 @@ BETTER_ENUM(
     USER_AGENT,
     NAT_OK_CONFIRM,
     NAT_INIT_TRANSIENT,
-    INVALID)
+    INVALID,
+    PING=12)
 
 struct PeerToBaseMessage {
   PeerToBaseMessageKind kind;
@@ -77,6 +82,9 @@ struct PeerToBaseMessage {
 
   // User agent
   std::string userAgent;
+
+  // Ping
+  uint16_t sequence;
 };
 
 BETTER_ENUM(PeerToPeerMessageKind, uint8_t, HELLO, HELLO_REPLY, DATA, INVALID)

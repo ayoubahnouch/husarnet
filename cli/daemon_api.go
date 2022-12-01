@@ -74,6 +74,11 @@ type DaemonStatus struct {
 	Peers        []PeerStatus
 }
 
+type PingResult struct {
+	Version       string
+	Message	      string
+}
+
 func (s DaemonStatus) getPeerByAddr(addr netip.Addr) *PeerStatus {
 	for _, peer := range s.Peers {
 		if peer.HusarnetAddress == addr {

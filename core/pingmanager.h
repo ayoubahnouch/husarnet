@@ -16,7 +16,7 @@ class PingManager {
 
  public:
     explicit PingManager(HusarnetManager *husarnetManager) :husarnetManager(husarnetManager), currentSequence(0){};
-    std::pair<bool,std::chrono::milliseconds> sendPing();
+    std::tuple<bool,std::chrono::milliseconds,uint16_t> sendPing();
     void notify();
     uint16_t getCurrentSequence();
 };

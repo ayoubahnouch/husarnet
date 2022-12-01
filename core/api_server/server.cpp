@@ -124,16 +124,16 @@ void ApiServer::runThread()
 
     svr.Get(
       "/api/ping", [&](const httplib::Request& req, httplib::Response& res) {
-      std::pair<bool,std::chrono::milliseconds> result = manager->getPingManager()->sendPing();
-      if(result.first){
+      std::tuple<bool,std::chrono::milliseconds,uint16_t> result = manager->getPingManager()->sendPing();
+      if(std::get<0>(result)){
         returnSuccess(req, res,json::object({
          {"version", manager->getVersion()},
-         {"message", std::to_string(result.second.count())}
+         {"message", "Time ellapesd for ping: "+std::to_string(std::get<1>(result).count())+"ms for sequnece number: "+std::to_string(std::get<2>(result))}
       }));
       } else{
       returnSuccess(req, res,json::object({
          {"version", manager->getVersion()},
-         {"message", "result"}
+         {"message", "Timout exceeded for sequence number: "+std::to_string(std::get<2>(result))}
       }));
       }
     });

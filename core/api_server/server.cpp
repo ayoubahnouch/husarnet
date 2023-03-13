@@ -278,7 +278,7 @@ void ApiServer::runThread()
         }
 
         manager->whitelistAdd(IpAddress::parse(req.get_param_value("address")));
-        returnSuccess(req, res);
+        returnSuccess(req, res, getStandardReply());
       });
 
   svr.Post(
@@ -293,7 +293,7 @@ void ApiServer::runThread()
         }
 
         manager->whitelistRm(IpAddress::parse(req.get_param_value("address")));
-        returnSuccess(req, res);
+        returnSuccess(req, res, getStandardReply());
       });
 
   svr.Post(
@@ -304,7 +304,7 @@ void ApiServer::runThread()
         }
 
         manager->whitelistEnable();
-        returnSuccess(req, res);
+        returnSuccess(req, res, getStandardReply());
       });
 
   svr.Post(
@@ -315,7 +315,7 @@ void ApiServer::runThread()
         }
 
         manager->whitelistDisable();
-        returnSuccess(req, res);
+        returnSuccess(req, res, getStandardReply());
       });
 
   svr.Post(
@@ -326,7 +326,7 @@ void ApiServer::runThread()
         }
 
         manager->hooksEnable();
-        returnSuccess(req, res);
+        returnSuccess(req, res, getStandardReply());
       });
 
   svr.Post(
@@ -337,13 +337,16 @@ void ApiServer::runThread()
         }
 
         manager->hooksDisable();
-        returnSuccess(req, res);
+        returnSuccess(req, res, getStandardReply());
       });
 
   svr.Get(
       "/api/logs/get",
       [&](const httplib::Request& req, httplib::Response& res) {
-        returnSuccess(req, res, getGlobalLogManager()->getLogs());
+        returnSuccess(req, res, json::object({
+         {"is_dirty", manager->isDirty()},
+         {"logs", getGlobalLogManager()->getLogs()}
+        }));
       });
 
   svr.Post(
@@ -371,7 +374,7 @@ void ApiServer::runThread()
           }
         }
 
-        returnSuccess(req, res);
+        returnSuccess(req, res, getStandardReply());
       });
 
   svr.Get(
@@ -383,7 +386,8 @@ void ApiServer::runThread()
             req, res,
             {{"verbosity", logLevelToInt(logManager->getVerbosity())},
              {"size", logManager->getSize()},
-             {"current_size", logManager->getCurrentSize()}});
+             {"current_size", logManager->getCurrentSize()},
+             {"is_dirty", manager->isDirty()}});
       });
 
   if(!svr.bind_to_port("127.0.0.1", manager->getApiPort())) {
@@ -402,4 +406,11 @@ void ApiServer::runThread()
     LOG_CRITICAL("HTTP thread finished unexpectedly. Exiting!");
     exit(1);
   }
+}
+
+json ApiServer::getStandardReply()
+{
+  return json::object({
+         {"is_dirty", manager->isDirty()},
+        });
 }

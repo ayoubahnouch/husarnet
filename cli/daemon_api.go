@@ -29,6 +29,11 @@ func (response *DaemonResponse[ResultType]) IsOk() bool {
 
 type EmptyResult interface{}
 
+// This can be easily expanded upon to include aditinal data we may want to possibly return
+type StandardResult struct {
+	IsDirty  bool   `json:"is_dirty"`
+}
+
 type BaseConnectionStatus struct {
 	Address netip.Addr
 	Port    int
@@ -75,10 +80,16 @@ type DaemonStatus struct {
 	Peers        []PeerStatus
 }
 
+type LogsResponse struct {
+	Logs 		[]string `json:"logs"`
+	IsDirty  	bool   `json:"is_dirty"`
+}
+
 type LogsSettings struct {
 	VerbosityLevel int `json:"verbosity"`
 	Size           int `json:"size"`
 	CurrentSize    int `json:"current_size"`
+	IsDirty  	   bool   `json:"is_dirty"`
 }
 
 func (s DaemonStatus) getPeerByAddr(addr netip.Addr) *PeerStatus {
@@ -241,3 +252,10 @@ func getDaemonsDashboardFqdn() string {
 
 	return response.Result.DashboardFQDN
 }
+
+func handleStandardResult(res StandardResult) {
+	if res.IsDirty {
+		printWarning("Daemon's dirty flag is set. You need to restart husarnet-daemon in order to reflect the current settings (like the Dashboard URL)")
+	}
+}
+

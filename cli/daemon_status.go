@@ -179,6 +179,12 @@ func printHooksStatus(status DaemonStatus) {
 	}
 }
 
+func printStandardInfoFromStatus(status DaemonStatus) {
+	if status.IsDirty {
+		printWarning("Daemon's dirty flag is set. You need to restart husarnet-daemon in order to reflect the current settings (like the Dashboard URL)")
+	}
+}
+
 func printStatus(ctx *cli.Context,status DaemonStatus) {
 
 	verbose := verboseLogs || ctx.Bool("verbose")

@@ -7,6 +7,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <list>
 
 #include <enum.h>
 
@@ -48,7 +49,7 @@ class LogManager {
         first(nullptr),
         last(nullptr),
         verbosity(LogLevel::INFO){};
-  std::string getLogs();
+  std::list<std::string> getLogs();
   void setSize(uint16_t size);
   void insert(std::string& log);
   void setVerbosity(LogLevel verb);

@@ -164,7 +164,7 @@ void ApiServer::runThread()
                 {"version", manager->getVersion()},
                 {"local_ip", manager->getSelfAddress().toString()},
                 {"local_hostname", manager->getSelfHostname()},
-                {"is_dirty", manager->isDirty()},
+                {"standard_result", getStandardReply()},
                 {"hooks_enabled", manager->areHooksEnabled()},
                 {"is_joined", manager->isJoined()},
                 {"is_ready_to_join",
@@ -344,7 +344,7 @@ void ApiServer::runThread()
       "/api/logs/get",
       [&](const httplib::Request& req, httplib::Response& res) {
         returnSuccess(req, res, json::object({
-         {"is_dirty", manager->isDirty()},
+         {"standard_result", getStandardReply()},
          {"logs", getGlobalLogManager()->getLogs()}
         }));
       });
@@ -387,7 +387,8 @@ void ApiServer::runThread()
             {{"verbosity", logLevelToInt(logManager->getVerbosity())},
              {"size", logManager->getSize()},
              {"current_size", logManager->getCurrentSize()},
-             {"is_dirty", manager->isDirty()}});
+             {"standard_result", getStandardReply()}
+             });
       });
 
   if(!svr.bind_to_port("127.0.0.1", manager->getApiPort())) {

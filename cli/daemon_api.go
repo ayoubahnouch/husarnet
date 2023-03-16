@@ -60,7 +60,7 @@ type PeerStatus struct {
 type DaemonStatus struct {
 	Version       string
 	DashboardFQDN string `json:"dashboard_fqdn"`
-	IsDirty       bool   `json:"is_dirty"`
+	StdResult     StandardResult   `json:"standard_result"`
 	HooksEnabled  bool   `json:"hooks_enabled"`
 
 	WebsetupAddress netip.Addr           `json:"websetup_address"`
@@ -82,14 +82,14 @@ type DaemonStatus struct {
 
 type LogsResponse struct {
 	Logs 		[]string `json:"logs"`
-	IsDirty  	bool   `json:"is_dirty"`
+	StdResult   StandardResult   `json:"standard_result"`
 }
 
 type LogsSettings struct {
 	VerbosityLevel int `json:"verbosity"`
 	Size           int `json:"size"`
 	CurrentSize    int `json:"current_size"`
-	IsDirty  	   bool   `json:"is_dirty"`
+	StdResult      StandardResult   `json:"standard_result"`
 }
 
 func (s DaemonStatus) getPeerByAddr(addr netip.Addr) *PeerStatus {
@@ -255,7 +255,9 @@ func getDaemonsDashboardFqdn() string {
 
 func handleStandardResult(res StandardResult) {
 	if res.IsDirty {
-		printWarning("Daemon's dirty flag is set. You need to restart husarnet-daemon in order to reflect the current settings (like the Dashboard URL)")
+		formatter := extractFormatter(redDot)
+		help := "Daemon's dirty flag is set. You need to restart husarnet-daemon in order to reflect the current settings (like the Dashboard URL)"
+		pterm.Printfln("%s %s", redDot, formatter(help))
 	}
 }
 

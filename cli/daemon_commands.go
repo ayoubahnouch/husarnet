@@ -129,9 +129,7 @@ var daemonLogsCommand = &cli.Command{
 			ArgsUsage: " ", // No arguments needed
 			Action: func(ctx *cli.Context) error {
 				settings := callDaemonGet[LogsSettings]("/api/logs/settings").Result
-				if settings.IsDirty {
-					printWarning("Daemon's dirty flag is set. You need to restart husarnet-daemon in order to reflect the current settings (like the Dashboard URL)")
-				}
+				handleStandardResult(settings.StdResult)
 				printSuccess("Logs verbosity level: " + strconv.Itoa(settings.VerbosityLevel))
 				printSuccess("Logs maximum size: " + strconv.Itoa(settings.Size))
 				printSuccess("Logs current size: " + strconv.Itoa(settings.CurrentSize))
@@ -146,10 +144,7 @@ var daemonLogsCommand = &cli.Command{
 			ArgsUsage: " ", // No arguments needed
 			Action: func(ctx *cli.Context) error {
 				logsResponse := callDaemonGet[LogsResponse]("/api/logs/get").Result
-				if logsResponse.IsDirty {
-					printWarning("Daemon's dirty flag is set. You need to restart husarnet-daemon in order to reflect the current settings (like the Dashboard URL)")
-				}
-				
+				handleStandardResult(logsResponse.StdResult)
 
 				for _, line := range logsResponse.Logs {
 					printInfo(line)
@@ -275,7 +270,7 @@ var daemonWhitelistCommand = &cli.Command{
 			ArgsUsage: " ", // No arguments needed
 			Action: func(ctx *cli.Context) error {
 				status := getDaemonStatus()
-				printStandardInfoFromStatus(status)
+				handleStandardResult(status.StdResult)
 				printWhitelist(status, false)
 
 				return nil
@@ -357,7 +352,7 @@ var daemonHooksCommand = &cli.Command{
 			ArgsUsage: " ", // No arguments needed
 			Action: func(ctx *cli.Context) error {
 				status := getDaemonStatus()
-				printStandardInfoFromStatus(status)
+				handleStandardResult(status.StdResult)
 				printHooksStatus(status)
 
 				return nil

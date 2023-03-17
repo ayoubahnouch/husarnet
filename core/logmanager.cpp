@@ -8,7 +8,7 @@ LogManager* globalLogManager;
 std::list<std::string> LogManager::getLogs()
 {
   std::list<std::string> logsList;
-  if(currentSize == 0){
+  if(currentSize == 0) {
     logsList.push_back("No logs to display");
     return logsList;
   }

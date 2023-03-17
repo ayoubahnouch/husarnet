@@ -343,10 +343,11 @@ void ApiServer::runThread()
   svr.Get(
       "/api/logs/get",
       [&](const httplib::Request& req, httplib::Response& res) {
-        returnSuccess(req, res, json::object({
-         {"standard_result", getStandardReply()},
-         {"logs", getGlobalLogManager()->getLogs()}
-        }));
+        returnSuccess(
+            req, res,
+            json::object(
+                {{"standard_result", getStandardReply()},
+                 {"logs", getGlobalLogManager()->getLogs()}}));
       });
 
   svr.Post(
@@ -387,8 +388,7 @@ void ApiServer::runThread()
             {{"verbosity", logLevelToInt(logManager->getVerbosity())},
              {"size", logManager->getSize()},
              {"current_size", logManager->getCurrentSize()},
-             {"standard_result", getStandardReply()}
-             });
+             {"standard_result", getStandardReply()}});
       });
 
   if(!svr.bind_to_port("127.0.0.1", manager->getApiPort())) {
@@ -412,6 +412,6 @@ void ApiServer::runThread()
 json ApiServer::getStandardReply()
 {
   return json::object({
-         {"is_dirty", manager->isDirty()},
-        });
+      {"is_dirty", manager->isDirty()},
+  });
 }
